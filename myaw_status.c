@@ -70,7 +70,7 @@ static PwType mw_status_type;
 [[ gnu::constructor ]]
 static void init_mw_status()
 {
-    PwTypeId_MwStatus = pw_subtype(&mw_status_type, "MwStatus", PwTypeId_Status, MwStatusData);
+    PwTypeId_MwStatus = pw_struct_subtype(&mw_status_type, "MwStatus", PwTypeId_Status, MwStatusData);
     mw_status_type.create    = mw_status_create;
     mw_status_type.init      = mw_status_init;
     mw_status_type.hash      = mw_status_hash;
