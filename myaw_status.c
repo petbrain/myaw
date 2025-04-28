@@ -5,21 +5,34 @@ PwTypeId PwTypeId_MwStatus = 0;
 uint16_t MW_END_OF_BLOCK = 0;
 uint16_t MW_PARSE_ERROR = 0;
 
-static PwResult mw_status_create(PwTypeId type_id, void* ctor_args)
+PwResult _mw_parser_error(MwParser* parser, char* source_file_name, unsigned source_line_number,
+                           unsigned line_number, unsigned char_pos, char* description, ...)
 {
-    // call super method
+    PwValue status = pw_create(PwTypeId_MwStatus);
+    // status is PW_SUCCESS by default
+    // can't use pw_if_error here because of simplified checking in pw_ok
+    if (status.status_code != PW_SUCCESS) {
+        return pw_move(&status);
+    }
 
-    PwValue status = pw_ancestor_of(PwTypeId_MwStatus)->create(type_id, ctor_args);
-    // the super method returns PW_SUCCESS by default
-    pw_return_if_error(&status);
+    // the base Status constructor does not allocate struct_data for PW_SUCCESS
+    // do this by setting status code and description
 
-    // the base Status constructor may not allocate struct_data
-    // do this by setting status description
-
+    status.status_code = MW_PARSE_ERROR;
     _pw_set_status_desc(&status, "");
     if (status.struct_data == nullptr) {
         return PwOOM();
     }
+
+    _pw_set_status_location(&status, source_file_name, source_line_number);
+    MwStatusData* status_data = _mw_status_data_ptr(&status);
+    status_data->line_number = line_number;;
+    status_data->position = char_pos;
+
+    va_list ap;
+    va_start(ap);
+    _pw_set_status_desc_ap(&status, description, ap);
+    va_end(ap);
     return pw_move(&status);
 }
 
@@ -71,7 +84,6 @@ static PwType mw_status_type;
 static void init_mw_status()
 {
     PwTypeId_MwStatus = pw_struct_subtype(&mw_status_type, "MwStatus", PwTypeId_Status, MwStatusData);
-    mw_status_type.create    = mw_status_create;
     mw_status_type.init      = mw_status_init;
     mw_status_type.hash      = mw_status_hash;
     mw_status_type.to_string = mw_status_to_string;

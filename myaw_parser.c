@@ -142,29 +142,6 @@ static inline MwBlockParserFunc get_custom_parser(MwParser* parser, PwValuePtr c
     return (MwBlockParserFunc) (parser_func.ptr);
 }
 
-PwResult _mw_parser_error(MwParser* parser, char* source_file_name, unsigned source_line_number,
-                           unsigned line_number, unsigned char_pos, char* description, ...)
-{
-    PwValue status = pw_create(PwTypeId_MwStatus);
-    // status is PW_SUCCESS by default
-    // can't use pw_if_error here because of simplified checking in pw_ok
-    if (status.status_code != PW_SUCCESS) {
-        return pw_move(&status);
-    }
-
-    status.status_code = MW_PARSE_ERROR;
-    _pw_set_status_location(&status, source_file_name, source_line_number);
-    MwStatusData* status_data = _mw_status_data_ptr(&status);
-    status_data->line_number = line_number;;
-    status_data->position = char_pos;
-
-    va_list ap;
-    va_start(ap);
-    _pw_set_status_desc_ap(&status, description, ap);
-    va_end(ap);
-    return pw_move(&status);
-}
-
 bool _mw_end_of_block(PwValuePtr status)
 {
     return (status->type_id == PwTypeId_Status) && (status->status_code == MW_END_OF_BLOCK);
