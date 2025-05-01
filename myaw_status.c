@@ -71,9 +71,7 @@ static PwResult mw_status_to_string(PwValuePtr self)
     PwValue status_str = pw_ancestor_of(PwTypeId_MwStatus)->to_string(self);
     pw_return_if_error(&status_str);
 
-    if (!pw_string_append(&result, &status_str)) {
-        return PwOOM();
-    }
+    pw_expect_true( pw_string_append(&result, &status_str) );
 
     return pw_move(&result);
 }

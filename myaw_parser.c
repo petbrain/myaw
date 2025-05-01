@@ -174,9 +174,7 @@ static PwResult read_line(MwParser* parser)
     pw_return_if_error(&status);
 
     // strip trailing spaces
-    if (!pw_string_rtrim(&parser->current_line)) {
-        return PwOOM();
-    }
+    pw_expect_true( pw_string_rtrim(&parser->current_line) );
 
     // measure indent
     parser->current_indent = pw_string_skip_spaces(&parser->current_line, 0);
@@ -366,9 +364,8 @@ static PwResult parse_convspec(MwParser* parser, unsigned opening_colon_pos, uns
     PwValue convspec = pw_substr(current_line, start_pos, closing_colon_pos);
     pw_return_if_error(&convspec);
 
-    if (!pw_string_trim(&convspec)) {
-        return PwOOM();
-    }
+    pw_expect_true( pw_string_trim(&convspec) );
+
     if (!have_custom_parser(parser, &convspec)) {
         // such a conversion specifier is not defined
         return PwNull();
@@ -442,17 +439,12 @@ PwResult _mw_unescape_line(MwParser* parser, PwValuePtr line, unsigned line_numb
             break;
         }
         if (chr != '\\') {
-            if (!pw_string_append(&result, chr)) {
-                return PwOOM();
-            }
+            pw_expect_true( pw_string_append(&result, chr) );
         } else {
             // start of escape sequence
             pos++;
             if (pos >= end_pos) {
-                if (!pw_string_append(&result, chr)) {  // leave backslash in the result
-                    return PwOOM();
-                }
-                return PwOK();
+                pw_return_ok_or_oom( pw_string_append(&result, chr) );  // leave backslash in the result
             }
             bool append_ok = false;
             int hexlen;
@@ -543,9 +535,7 @@ PwResult _mw_unescape_line(MwParser* parser, PwValuePtr line, unsigned line_numb
                     }
                     break;
             }
-            if (!append_ok) {
-                return PwOOM();
-            }
+            pw_expect_true( append_ok );
         }
         pos++;
     }
@@ -611,9 +601,7 @@ static PwResult fold_lines(MwParser* parser, PwValuePtr lines, char32_t quote, P
         if (i > start_i) {
             if (pw_strlen(&line) == 0) {
                 // treat empty lines as LF
-                if (!pw_string_append(&line, '\n')) {
-                    return PwOOM();
-                }
+                pw_expect_true( pw_string_append(&line, '\n') );
                 prev_LF = true;
             } else {
                 if (prev_LF) {
@@ -623,9 +611,7 @@ static PwResult fold_lines(MwParser* parser, PwValuePtr lines, char32_t quote, P
                     if (pw_isspace(pw_char_at(&line, 0))) {
                         // do not append separator if the line aleady starts with space
                     } else {
-                        if (!pw_string_append(&result, ' ')) {
-                            return PwOOM();
-                        }
+                        pw_expect_true( pw_string_append(&result, ' ') );
                     }
                 }
             }
@@ -635,13 +621,9 @@ static PwResult fold_lines(MwParser* parser, PwValuePtr lines, char32_t quote, P
             PwValue unescaped = _mw_unescape_line(parser, &line, line_number.unsigned_value,
                                                    quote, 0, pw_strlen(&line));
             pw_return_if_error(&unescaped);
-            if (!pw_string_append(&result, &unescaped)) {
-                return PwOOM();
-            }
+            pw_expect_true( pw_string_append(&result, &unescaped) );
         } else {
-            if (!pw_string_append(&result, &line)) {
-                return PwOOM();
-            }
+            pw_expect_true( pw_string_append(&result, &line) );
         }
     }}
     return pw_move(&result);
@@ -718,9 +700,7 @@ static PwResult parse_quoted_string(MwParser* parser, unsigned opening_quote_pos
         if (_mw_find_closing_quote(&parser->current_line, quote, block_indent, end_pos)) {
             // final line
             PwValue final_line = pw_substr(&parser->current_line, block_indent, *end_pos);
-            if (!pw_string_rtrim(&final_line)) {
-                return PwOOM();
-            }
+            pw_expect_true( pw_string_rtrim(&final_line) );
             pw_expect_ok( pw_array_append(&lines, &final_line) );
             (*end_pos)++;
             closing_quote_detected = true;
@@ -1241,9 +1221,7 @@ parse_literal_string_or_map:
             pw_return_if_error(&key);
 
             // strip trailing spaces
-            if (!pw_string_rtrim(&key)) {
-                return PwOOM();
-            }
+            pw_expect_true( pw_string_rtrim(&key) );
 
             if (nested_value_pos) {
                 // key was anticipated, simply return it
